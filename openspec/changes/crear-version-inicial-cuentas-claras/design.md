@@ -72,18 +72,17 @@ Las secciones se actualizarán sin cambiar de página.
 
 ### DT-04 — Estado en memoria
 
-Mientras la página esté abierta, JavaScript mantendrá un único estado con dos colecciones:
+Mientras la página esté abierta, JavaScript mantendrá un único objeto de estado. Este objeto contendrá:
 
-```text
-Estado
-├── actividades
-├── actividad seleccionada
-├── participantes por actividad
-├── gastos por actividad
-└── pagos por actividad
-```
+- una colección de actividades;
+- la referencia o identificador de la actividad seleccionada;
+- los participantes pertenecientes a cada actividad;
+- los gastos pertenecientes a cada actividad;
+- los pagos pertenecientes a cada actividad.
 
-Todas las listas, balances y transferencias propuestas se obtendrán desde ese estado. No se mantendrán copias independientes de los balances o de la liquidación.
+Los balances, la propuesta de liquidación y los estados de pago no se almacenarán como colecciones independientes. Se calcularán a partir de los participantes, gastos y pagos de la actividad seleccionada.
+
+Al cambiar la actividad seleccionada, la interfaz utilizará exclusivamente los datos asociados a esa actividad.
 
 **Justificación:** los balances y la liquidación son resultados calculados. Volver a calcularlos desde participantes y gastos evita inconsistencias entre datos almacenados y resultados visibles.
 
@@ -126,6 +125,28 @@ Gasto
 ```
 
 **Justificación:** utilizar identificadores evita depender del nombre para relacionar gastos y personas.
+
+### DT-06A — Flujo de edición de un gasto
+
+Para iniciar la edición, el sistema identificará el gasto mediante su `id` y copiará sus datos actuales al formulario de gastos. Iniciar la edición no modificará el gasto almacenado.
+
+Al confirmar la edición:
+
+1. Se validarán la descripción, el monto, el pagador y los participantes seleccionados con las mismas reglas utilizadas al registrar un gasto.
+2. Si la validación falla, el gasto original permanecerá sin modificaciones y se mostrará un mensaje específico.
+3. Si la validación es correcta, se reemplazarán los datos editables del gasto identificado, conservando su identificador.
+4. Después del reemplazo se guardará el estado válido y se recalcularán la división, los balances y la propuesta de liquidación.
+
+Al cancelar la edición:
+
+1. Se descartarán los cambios presentes en el formulario.
+2. No se modificará el estado.
+3. El gasto conservará todos sus datos anteriores.
+4. El formulario dejará el modo de edición.
+
+La interfaz deberá distinguir claramente entre registrar un gasto nuevo y confirmar la edición de un gasto existente.
+
+La decisión sobre qué sucede con los pagos existentes si posteriormente se edita o elimina un gasto continúa pendiente. Este flujo no define ni presupone ese comportamiento.
 
 ### DT-07 — Persistencia incremental
 
@@ -211,6 +232,22 @@ Cada actividad tendrá, como mínimo:
 
 El encargado será un participante de la actividad y será la única persona que opere la aplicación. No habrá autenticación ni cuentas individuales.
 
+### DT-12A — Validación del encargado antes de registrar pagos
+
+Antes de registrar un pago, el sistema comprobará que:
+
+1. Existe una actividad seleccionada.
+2. La actividad tiene un identificador de encargado.
+3. El identificador corresponde a un participante perteneciente a esa actividad.
+
+Si alguna de estas condiciones no se cumple:
+
+- el pago no se agregará al estado;
+- los pagos y montos pendientes existentes permanecerán sin modificaciones;
+- se mostrará un mensaje indicando que primero debe designarse un encargado válido.
+
+Esta validación se ejecutará antes de validar o guardar el monto del pago. La interfaz podrá impedir anticipadamente el inicio del registro, pero la validación deberá repetirse al confirmar la operación para proteger el estado.
+
 ### DT-13 — Registro de pagos
 
 Cada pago tendrá, como mínimo:
@@ -223,6 +260,34 @@ Cada pago tendrá, como mínimo:
 - referencia a la transferencia pendiente correspondiente.
 
 Una transferencia mostrará monto requerido, total pagado y monto pendiente. El sistema rechazará pagos que superen el pendiente.
+
+### DT-13A — Cálculo del pendiente y estado de una transferencia
+
+Para cada transferencia se utilizarán los siguientes valores, expresados en centavos enteros:
+
+- `requiredCents`: monto requerido por la transferencia;
+- `paidCents`: suma de todos los pagos válidos registrados para esa transferencia;
+- `pendingCents`: `requiredCents - paidCents`.
+
+Antes de guardar un nuevo pago se comprobará que su monto sea mayor que cero y no supere `pendingCents`.
+
+El estado se derivará en cada actualización y no se almacenará como un dato independiente:
+
+- `Pendiente` cuando `paidCents === 0` y `pendingCents === requiredCents`;
+- `Parcial` cuando `paidCents > 0` y `paidCents < requiredCents`;
+- `Pagado` cuando `paidCents === requiredCents` y `pendingCents === 0`.
+
+Para datos válidos siempre deberá cumplirse:
+
+`0 <= paidCents <= requiredCents`
+
+y:
+
+`requiredCents === paidCents + pendingCents`.
+
+Si un pago es inválido o supera el pendiente, no se modificará la colección de pagos y el estado derivado conservará su valor anterior.
+
+La decisión sobre cómo tratar los pagos ya registrados cuando posteriormente se edita o elimina un gasto y cambia la transferencia requerida continúa pendiente.
 
 ### DT-14 — Validación antes de modificar el estado
 

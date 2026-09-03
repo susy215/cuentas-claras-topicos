@@ -1,4 +1,4 @@
-import { buildSettlement, settlementWithPayments, validateBobPerUsdt, canCloseActivity } from './calculations.js?v=inc3';
+import { buildSettlement, settlementWithPayments, validateBobPerUsdt, canCloseActivity } from './calculations.js?v=inc4';
 
 let sequence = 0;
 export function nextId(prefix) {

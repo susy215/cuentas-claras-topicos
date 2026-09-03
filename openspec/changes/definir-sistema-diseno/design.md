@@ -162,3 +162,13 @@ Las transiciones deben ser breves y no impedir el uso. Se admite elevación suti
 - errores expresados con texto, no solo color;
 - estados cerrados, pendientes y pagados expresados mediante texto;
 - contraste suficiente entre texto, fondo y controles.
+
+
+## Orientación de estado de actividad
+
+El badge `Abierta`/`Cerrada` se complementa con un mensaje dentro del contexto de actividad activa:
+
+- actividad abierta: `Puedes continuar trabajando en esta actividad y completar información o conciliaciones antes del cierre.`;
+- actividad cerrada: `Historial de solo lectura · no se permite reapertura en esta entrega.`
+
+Esto evita que el usuario tenga que deducir el significado operativo del estado únicamente por el color o la palabra del badge.

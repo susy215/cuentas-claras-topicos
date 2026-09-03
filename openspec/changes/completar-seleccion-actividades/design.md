@@ -41,3 +41,13 @@ Al seleccionarla:
 ## Persistencia
 
 Se reutiliza la persistencia local existente. La selección no debe provocar pérdida ni mezcla de información entre actividades.
+
+
+## Orientación de estado
+
+El bloque de actividad activa incluye un mensaje textual complementario al badge:
+
+- `Abierta`: indica que se puede continuar trabajando en la actividad y completar información o conciliaciones antes del cierre.
+- `Cerrada`: indica que el contenido es historial de solo lectura y que no existe reapertura en esta entrega.
+
+El mensaje no sustituye las reglas del dominio; solo hace visible al usuario qué significa el estado.

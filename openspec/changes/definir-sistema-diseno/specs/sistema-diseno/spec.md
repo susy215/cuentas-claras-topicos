@@ -75,3 +75,13 @@ La interfaz debe ser utilizable en anchos de escritorio y móvil sin ocultar con
 - **Dado** que el dispositivo indica `prefers-reduced-motion: reduce`,
 - **cuando** se renderizan componentes interactivos,
 - **entonces** se eliminan transformaciones y animaciones no esenciales sin perder feedback de estado.
+
+
+## DS-15 — Orientación del estado de actividad
+
+- **Dado** que existe una actividad activa,
+- **cuando** se muestra su estado,
+- **entonces** la interfaz acompaña el badge con una explicación breve y comprensible del significado de `Abierta` o `Cerrada`.
+
+- Una actividad `Abierta` indica que el usuario puede continuar trabajando en ella antes del cierre.
+- Una actividad `Cerrada` indica historial de solo lectura sin reapertura en esta entrega.

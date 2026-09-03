@@ -1,6 +1,6 @@
-import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments, summarizeExpenses } from './calculations.js?v=inc3';
-import { createEmptyState, loadState, saveState } from './storage.js?v=inc3';
-import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js?v=inc3';
+import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments, summarizeExpenses } from './calculations.js?v=inc4';
+import { createEmptyState, loadState, saveState } from './storage.js?v=inc4';
+import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js?v=inc4';
 
 let state;
 try { state = loadState(); } catch (error) { state = createEmptyState(); queueMicrotask(() => showMessage(error.message, true)); }
@@ -121,7 +121,10 @@ function render() {
     renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement(); return;
   }
   els['activity-summary'].className = 'active-activity';
-  els['activity-summary'].innerHTML = `<div class="active-activity-label">Actividad activa</div><strong class="active-activity-name">${escapeHtml(activity.name)}</strong><div class="helper">Tipo de cambio: 1 USDT = ${formatRate(activity.bobPerUsdt)} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)</div>${isClosed(activity) ? '<div class="readonly-note">Historial de solo lectura · no se permite reapertura en esta entrega.</div>' : ''}`;
+  const statusGuidance = isClosed(activity)
+    ? '<div class="status-guidance readonly-note"><strong>Cerrada:</strong> historial de solo lectura · no se permite reapertura en esta entrega.</div>'
+    : '<div class="status-guidance open-note"><strong>Abierta:</strong> puedes continuar trabajando en esta actividad y completar información o conciliaciones antes del cierre.</div>';
+  els['activity-summary'].innerHTML = `<div class="active-activity-label">Actividad activa</div><strong class="active-activity-name">${escapeHtml(activity.name)}</strong><div class="helper">Tipo de cambio: 1 USDT = ${formatRate(activity.bobPerUsdt)} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)</div>${statusGuidance}`;
   els['activity-status'].textContent = activity.status; els['activity-status'].className = `badge ${activity.status === 'Cerrada' ? 'badge-success' : 'badge-warning'}`;
   els['rate-update'].value = activity.bobPerUsdt;
   renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement();
@@ -174,7 +177,7 @@ function renderExpenseSummary() {
     const summary = summarizeExpenses(activity);
     els['expense-summary'].innerHTML = `
       <div class="summary-heading">
-        <div><strong>Resumen multimoneda</strong><div class="helper">Tipo de cambio utilizado: 1 USDT = ${formatRate(summary.bobPerUsdt)} BOB</div></div>
+        <div><div class="summary-title-line"><strong>Resumen multimoneda</strong><span class="help-tip" tabindex="0" aria-label="Ayuda sobre total normalizado">i<span class="tooltip" role="tooltip">El total normalizado suma en USDT los gastos que originalmente pueden estar en BOB, USD o USDT.</span></span></div><div class="helper">Tipo de cambio utilizado: 1 USDT = ${formatRate(summary.bobPerUsdt)} BOB</div></div>
         <span class="badge badge-info">USDT</span>
       </div>
       <div class="summary-list">${summary.items.map((item) => `<div class="summary-row"><span>${escapeHtml(item.description)}</span><span>${formatOriginalMoney(item.amountMinor, item.currency)} → <strong>${formatMoney(item.normalizedCents)}</strong></span></div>`).join('')}</div>

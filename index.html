@@ -4,14 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cuentas Claras</title>
-  <link rel="stylesheet" href="css/styles.css?v=inc3">
+  <link rel="stylesheet" href="css/styles.css?v=inc4">
 </head>
 <body>
   <header class="app-header">
-    <div class="container">
-      <p class="eyebrow">ELC-103 · Spec-Driven Development</p>
-      <h1>Cuentas Claras</h1>
-      <p class="subtitle">Gastos compartidos, balances y conciliación en USDT.</p>
+    <div class="container brand-lockup">
+      <div class="brand-mark" aria-hidden="true">↔</div>
+      <div>
+        <p class="eyebrow">ELC-103 · Spec-Driven Development</p>
+        <h1>Cuentas Claras</h1>
+        <p class="subtitle">Gastos compartidos, conversión multimoneda y conciliación en USDT.</p>
+      </div>
     </div>
   </header>
 
@@ -20,7 +23,7 @@
       <div class="section-heading">
         <div>
           <p class="step">Paso 1</p>
-          <h2 id="activity-title">Actividad</h2>
+          <h2 id="activity-title">Actividad</h2><p class="section-description">Crea una actividad nueva o cambia entre actividades existentes.</p>
         </div>
         <span id="activity-status" class="badge badge-neutral">Sin actividad</span>
       </div>
@@ -28,9 +31,9 @@
         <label>Nombre de la actividad
           <input id="activity-name" required placeholder="Ej.: Viaje a Samaipata">
         </label>
-        <label>Tipo de cambio BOB/USDT
-          <input id="activity-rate" inputmode="decimal" required placeholder="Ej.: 6,90">
-          <small>Regla: 1 USDT = X BOB.</small>
+        <label>Tipo de cambio BOB/USDT <span class="help-tip" tabindex="0" aria-label="Ayuda sobre tipo de cambio">i<span class="tooltip" role="tooltip">Indica cuántos bolivianos equivalen a 1 USDT en esta actividad.</span></span>
+          <input id="activity-rate" inputmode="decimal" required placeholder="Ej.: 6,90" aria-describedby="activity-rate-help">
+          <small id="activity-rate-help">Regla: 1 USDT = X BOB.</small>
         </label>
         <button class="button button-primary" type="submit">Crear actividad</button>
       </form>
@@ -45,7 +48,7 @@
     </section>
 
     <section class="card" aria-labelledby="participants-title">
-      <div class="section-heading"><div><p class="step">Paso 2</p><h2 id="participants-title">Participantes y encargado</h2></div></div>
+      <div class="section-heading"><div><p class="step">Paso 2</p><h2 id="participants-title">Participantes y encargado</h2><p class="section-description">Agrega personas y define quién coordina la conciliación.</p></div></div>
       <form id="participant-form" class="inline-form">
         <label class="grow">Nombre
           <input id="participant-name" required placeholder="Ej.: Ana Pérez">
@@ -64,7 +67,7 @@
     </section>
 
     <section class="card" aria-labelledby="expenses-title">
-      <div class="section-heading"><div><p class="step">Paso 3</p><h2 id="expenses-title">Registrar gasto</h2></div></div>
+      <div class="section-heading"><div><p class="step">Paso 3</p><h2 id="expenses-title">Registrar gasto</h2><p class="section-description">Cada gasto conserva su moneda original y se normaliza a USDT.</p></div></div>
       <form id="expense-form" class="form-grid">
         <input id="expense-id" type="hidden">
         <label>Descripción<input id="expense-description" required placeholder="Ej.: Cena"></label>
@@ -79,19 +82,20 @@
     </section>
 
     <section class="card" aria-labelledby="balances-title">
-      <div class="section-heading"><div><p class="step">Paso 4</p><h2 id="balances-title">Balances normalizados</h2></div><span class="badge badge-info">USDT</span></div>
+      <div class="section-heading"><div><p class="step">Paso 4</p><h2 id="balances-title">Balances normalizados</h2><p class="section-description">Positivo = recibe · negativo = paga.</p></div><span class="badge badge-info">USDT</span></div>
+      <div class="concept-help"><span class="help-tip" tabindex="0" aria-label="Ayuda sobre balance normalizado">i<span class="tooltip" role="tooltip">Todos los gastos se convierten a USDT antes de calcular cuánto debe pagar o recibir cada persona.</span></span><span>Los balances usan una moneda común para poder compararse.</span></div>
       <div id="balance-list" class="grid-cards"></div>
       <p id="balance-integrity" class="integrity"></p>
     </section>
 
     <section class="card" aria-labelledby="settlement-title">
-      <div class="section-heading"><div><p class="step">Paso 5</p><h2 id="settlement-title">Liquidación y conciliación</h2></div></div>
+      <div class="section-heading"><div><p class="step">Paso 5</p><h2 id="settlement-title">Liquidación y conciliación</h2><p class="section-description">Revisa quién debe pagar a quién y confirma lo efectivamente conciliado.</p></div></div>
       <p class="helper">Una propuesta no se considera pagada hasta que el encargado la confirma.</p>
       <div id="settlement-list" class="stack"></div>
     </section>
 
     <section class="card" aria-labelledby="close-title">
-      <div class="section-heading"><div><p class="step">Paso 6</p><h2 id="close-title">Cierre efectivo</h2></div></div>
+      <div class="section-heading"><div><p class="step">Paso 6</p><h2 id="close-title">Cierre efectivo</h2><p class="section-description">El cierre conserva el historial y bloquea nuevas modificaciones.</p></div></div>
       <p id="close-message" class="helper">La actividad solo puede cerrarse cuando no queden conciliaciones pendientes.</p>
       <button id="close-button" class="button button-danger" type="button">Cerrar actividad</button>
     </section>
@@ -99,6 +103,6 @@
     <div id="message" class="toast hidden" role="status" aria-live="polite"></div>
   </main>
 
-  <script type="module" src="js/app.js?v=inc3"></script>
+  <script type="module" src="js/app.js?v=inc4"></script>
 </body>
 </html>

@@ -35,3 +35,16 @@
 - **Dado** que existen actividades abiertas y cerradas con datos almacenados,
 - **cuando** se refresca la página,
 - **entonces** las actividades y sus datos reaparecen sin mezclarse y conservan sus estados.
+
+
+## ACT-SEL-07 — Orientación según estado
+
+- **Dado** que una actividad está seleccionada,
+- **cuando** el usuario observa el bloque `Actividad activa`,
+- **entonces** la interfaz explica brevemente qué implica su estado.
+
+- **Dado** una actividad `Abierta`,
+- **entonces** se informa que puede continuarse el trabajo de la actividad y completar información o conciliaciones antes del cierre.
+
+- **Dado** una actividad `Cerrada`,
+- **entonces** se informa que se muestra como historial de solo lectura y que no existe reapertura en esta entrega.

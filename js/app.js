@@ -1,13 +1,13 @@
-import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments, summarizeExpenses } from './calculations.js?v=inc2b';
-import { createEmptyState, loadState, saveState } from './storage.js?v=inc2b';
-import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js?v=inc2b';
+import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments, summarizeExpenses } from './calculations.js?v=inc3';
+import { createEmptyState, loadState, saveState } from './storage.js?v=inc3';
+import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js?v=inc3';
 
 let state;
 try { state = loadState(); } catch (error) { state = createEmptyState(); queueMicrotask(() => showMessage(error.message, true)); }
 
 const $ = (id) => document.getElementById(id);
 const els = Object.fromEntries([
-  'activity-form','activity-name','activity-rate','activity-summary','activity-status','participant-form','participant-name','participant-list','manager-select','rate-update','rate-button','expense-form','expense-id','expense-description','expense-amount','expense-currency','payer-select','expense-participants','expense-submit','expense-cancel','expense-list','expense-summary','balance-list','balance-integrity','settlement-list','close-button','close-message','message'
+  'activity-form','activity-name','activity-rate','activity-summary','activity-status','activity-list','activity-count','participant-form','participant-name','participant-list','manager-select','rate-update','rate-button','expense-form','expense-id','expense-description','expense-amount','expense-currency','payer-select','expense-participants','expense-submit','expense-cancel','expense-list','expense-summary','balance-list','balance-integrity','settlement-list','close-button','close-message','message'
 ].map((id) => [id, $(id)]));
 
 function selectedActivity() { return state.activities.find((a) => a.id === state.selectedActivityId) ?? null; }
@@ -58,10 +58,20 @@ els['close-button'].addEventListener('click', () => {
 document.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-action]');
   if (!button) return;
-  const activity = selectedActivity();
-  if (!activity) return;
   const action = button.dataset.action;
   const id = button.dataset.id;
+  if (action === 'select-activity') {
+    const target = state.activities.find((item) => item.id === id);
+    if (!target) return showMessage('Actividad no encontrada.', true);
+    if (target.id === state.selectedActivityId) return;
+    clearExpenseForm();
+    state.selectedActivityId = target.id;
+    persist();
+    showMessage(`Actividad “${target.name}” seleccionada.`);
+    return;
+  }
+  const activity = selectedActivity();
+  if (!activity) return;
   if (action === 'remove-participant') {
     if (isClosed(activity)) return showMessage('La actividad está cerrada y es de solo lectura.', true);
     if (confirm('¿Eliminar participante?')) run(() => { removeParticipant(activity, id); persist(); }, 'Participante eliminado.');
@@ -93,7 +103,8 @@ function requireActivity() {
   if (!activity) throw new Error('Primero crea una actividad.');
   return activity;
 }
-function resetExpenseForm() { els['expense-form'].reset(); els['expense-id'].value = ''; els['expense-submit'].textContent = 'Registrar gasto'; els['expense-cancel'].classList.add('hidden'); renderParticipantControls(); }
+function clearExpenseForm() { els['expense-form'].reset(); els['expense-id'].value = ''; els['expense-submit'].textContent = 'Registrar gasto'; els['expense-cancel'].classList.add('hidden'); }
+function resetExpenseForm() { clearExpenseForm(); renderParticipantControls(); }
 function run(fn, successMessage) { try { fn(); if (successMessage) showMessage(successMessage); } catch (error) { showMessage(error.message, true); } }
 function showMessage(text, isError = false) { if (!els.message) return; els.message.textContent = text; els.message.className = `toast${isError ? ' error' : ''}`; clearTimeout(showMessage.timer); showMessage.timer = setTimeout(() => els.message.classList.add('hidden'), 3500); }
 function nameFor(activity, id) { return activity.participants.find((p) => p.id === id)?.name ?? 'Desconocido'; }
@@ -101,18 +112,34 @@ function nameFor(activity, id) { return activity.participants.find((p) => p.id =
 function render() {
   const activity = selectedActivity();
   const hasActivity = Boolean(activity);
+  renderActivityList();
   document.querySelectorAll('section.card:not(:first-of-type) input, section.card:not(:first-of-type) select, section.card:not(:first-of-type) button').forEach((control) => { control.disabled = !hasActivity || activity?.status === 'Cerrada'; });
   if (!activity) {
     els['activity-summary'].textContent = 'Crea una actividad para comenzar.';
+    els['activity-summary'].className = 'empty-state';
     els['activity-status'].textContent = 'Sin actividad'; els['activity-status'].className = 'badge badge-neutral';
     renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement(); return;
   }
-  els['activity-summary'].innerHTML = `<strong>${escapeHtml(activity.name)}</strong><br>Tipo de cambio: 1 USDT = ${formatRate(activity.bobPerUsdt)} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)`;
+  els['activity-summary'].className = 'active-activity';
+  els['activity-summary'].innerHTML = `<div class="active-activity-label">Actividad activa</div><strong class="active-activity-name">${escapeHtml(activity.name)}</strong><div class="helper">Tipo de cambio: 1 USDT = ${formatRate(activity.bobPerUsdt)} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)</div>${isClosed(activity) ? '<div class="readonly-note">Historial de solo lectura · no se permite reapertura en esta entrega.</div>' : ''}`;
   els['activity-status'].textContent = activity.status; els['activity-status'].className = `badge ${activity.status === 'Cerrada' ? 'badge-success' : 'badge-warning'}`;
   els['rate-update'].value = activity.bobPerUsdt;
   renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement();
   els['close-button'].disabled = activity.status === 'Cerrada';
   els['close-message'].textContent = activity.status === 'Cerrada' ? 'La actividad está cerrada y su estado quedó persistido.' : 'Confirma todas las conciliaciones antes de cerrar.';
+}
+
+function renderActivityList() {
+  els['activity-count'].textContent = String(state.activities.length);
+  if (state.activities.length === 0) {
+    els['activity-list'].innerHTML = '<div class="empty-state">Todavía no existen actividades.</div>';
+    return;
+  }
+  els['activity-list'].innerHTML = state.activities.map((activity) => {
+    const selected = activity.id === state.selectedActivityId;
+    const badgeClass = activity.status === 'Cerrada' ? 'badge-success' : 'badge-warning';
+    return `<button type="button" class="activity-option${selected ? ' selected' : ''}" data-action="select-activity" data-id="${activity.id}" aria-pressed="${selected}"><span class="activity-option-main"><strong>${escapeHtml(activity.name)}</strong><span class="helper">${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)</span></span><span class="badge ${badgeClass}">${activity.status}</span></button>`;
+  }).join('');
 }
 
 function renderParticipantControls() {
@@ -123,7 +150,7 @@ function renderParticipantControls() {
   const options = `<option value="">Selecciona un participante</option>${participants.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}`;
   els['manager-select'].innerHTML = options; if (activity?.managerId) els['manager-select'].value = activity.managerId;
   els['payer-select'].innerHTML = `<option value="">Selecciona pagador</option>${participants.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}`;
-  els['expense-participants'].innerHTML = participants.map((p) => `<label class="check"><input type="checkbox" value="${p.id}" checked> ${escapeHtml(p.name)}</label>`).join('') || '<span class="helper">Agrega participantes primero.</span>';
+  els['expense-participants'].innerHTML = participants.map((p) => `<label class="check"><input type="checkbox" value="${p.id}" checked${isClosed(activity) ? ' disabled' : ''}> ${escapeHtml(p.name)}</label>`).join('') || '<span class="helper">Agrega participantes primero.</span>';
 }
 
 function renderExpenses() {

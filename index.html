@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cuentas Claras</title>
-  <link rel="stylesheet" href="css/styles.css?v=inc2b">
+  <link rel="stylesheet" href="css/styles.css?v=inc3">
 </head>
 <body>
   <header class="app-header">
@@ -35,6 +35,13 @@
         <button class="button button-primary" type="submit">Crear actividad</button>
       </form>
       <div id="activity-summary" class="empty-state">Crea una actividad para comenzar.</div>
+      <div class="activity-browser compact-top" aria-labelledby="activity-list-title">
+        <div class="subsection-heading">
+          <div><strong id="activity-list-title">Actividades</strong><div class="helper">Selecciona una actividad para ver únicamente sus datos.</div></div>
+          <span id="activity-count" class="badge badge-neutral">0</span>
+        </div>
+        <div id="activity-list" class="activity-list"></div>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="participants-title">
@@ -92,6 +99,6 @@
     <div id="message" class="toast hidden" role="status" aria-live="polite"></div>
   </main>
 
-  <script type="module" src="js/app.js?v=inc2b"></script>
+  <script type="module" src="js/app.js?v=inc3"></script>
 </body>
 </html>

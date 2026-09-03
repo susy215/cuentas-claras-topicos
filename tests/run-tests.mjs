@@ -133,6 +133,47 @@ await test('P13', 'resumen de monedas mixtas: 100 BOB + 100 USDT a tasa 100 = 10
   assert.equal(summary.totalNormalizedCents, 10100);
 });
 
+
+await test('P14', 'actividades distintas conservan participantes y gastos sin mezclarse', () => {
+  const a = createActivity('Actividad A', 6.9);
+  const ana = addParticipant(a, 'Ana');
+  addExpense(a,{description:'Cena A',amountMinor:1000,currency:'USDT',payerId:ana.id,participantIds:[ana.id]});
+  const b = createActivity('Actividad B', 7);
+  const beto = addParticipant(b, 'Beto');
+  addExpense(b,{description:'Cena B',amountMinor:2000,currency:'USDT',payerId:beto.id,participantIds:[beto.id]});
+  const restored = deserializeState(serializeState({ activities:[a,b], selectedActivityId:b.id }));
+  assert.equal(restored.activities[0].participants[0].name, 'Ana');
+  assert.equal(restored.activities[0].expenses[0].description, 'Cena A');
+  assert.equal(restored.activities[1].participants[0].name, 'Beto');
+  assert.equal(restored.activities[1].expenses[0].description, 'Cena B');
+  assert.equal(restored.selectedActivityId, b.id);
+});
+
+await test('P15', 'una actividad nueva comienza limpia e independiente', () => {
+  const previous = createActivity('Anterior', 6.9);
+  const ana = addParticipant(previous, 'Ana');
+  addExpense(previous,{description:'Cena',amountMinor:1000,currency:'USDT',payerId:ana.id,participantIds:[ana.id]});
+  const fresh = createActivity('Nueva', 6.9);
+  assert.equal(fresh.participants.length, 0);
+  assert.equal(fresh.expenses.length, 0);
+  assert.equal(fresh.payments.length, 0);
+  assert.equal(fresh.managerId, null);
+  assert.equal(previous.expenses.length, 1);
+});
+
+await test('P16', 'persistencia conserva actividad seleccionada y un historial cerrado', () => {
+  const open = createActivity('Abierta', 6.9);
+  const closed = createActivity('Histórica', 6.9);
+  const ana = addParticipant(closed, 'Ana');
+  setManager(closed, ana.id);
+  closeActivity(closed);
+  const restored = deserializeState(serializeState({ activities:[open,closed], selectedActivityId:closed.id }));
+  assert.equal(restored.activities.length, 2);
+  assert.equal(restored.selectedActivityId, closed.id);
+  assert.equal(restored.activities[1].status, 'Cerrada');
+  assert.equal(restored.activities[1].participants[0].name, 'Ana');
+});
+
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.id} - ${r.name}${r.ok ? '' : `\n${r.error}`}`);
 const failed = results.filter((r)=>!r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} pruebas aprobadas.`);

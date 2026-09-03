@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { splitEqualCents, computeBalances, normalizeToUsdtCents, settlementWithPayments, validateBobPerUsdt } from '../js/calculations.js';
-import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, setManager, updateRate } from '../js/domain.js';
+import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, removeParticipant, setManager, updateRate } from '../js/domain.js';
 import { deserializeState, serializeState } from '../js/storage.js';
 
 const results = [];
@@ -86,6 +86,31 @@ await test('P9', 'recarga conserva actividad, tasa, gastos, pagos y cierre', () 
   assert.equal(a.expenses.length,4);
   assert.equal(a.payments.length,2);
   assert.ok(settlementWithPayments(a).every((t)=>t.pendingCents===0));
+});
+
+
+await test('P10', 'gastos conciliados no se pueden editar ni eliminar', () => {
+  const a = createActivity('P10', 6.9);
+  const ana = addParticipant(a, 'Ana'); const beto = addParticipant(a, 'Beto');
+  setManager(a, ana.id);
+  const expense = addExpense(a,{description:'Cena',amountMinor:10000,currency:'USDT',payerId:ana.id,participantIds:[ana.id,beto.id]});
+  const transfer = settlementWithPayments(a)[0];
+  confirmTransfer(a, transfer.key);
+  assert.throws(() => editExpense(a, expense.id, {...expense, amountMinor:12000}), /después de confirmar conciliaciones/i);
+  assert.throws(() => deleteExpense(a, expense.id), /después de confirmar conciliaciones/i);
+  assert.equal(a.expenses.length, 1);
+  assert.equal(a.expenses[0].amountMinor, 10000);
+});
+
+await test('P11', 'actividad cerrada rechaza modificaciones del dominio', () => {
+  const a = createActivity('P11', 6.9);
+  const ana = addParticipant(a, 'Ana');
+  setManager(a, ana.id);
+  closeActivity(a);
+  assert.throws(() => addParticipant(a, 'Beto'), /cerrada/i);
+  assert.throws(() => removeParticipant(a, ana.id), /cerrada/i);
+  assert.throws(() => updateRate(a, 7), /cerrada/i);
+  assert.throws(() => addExpense(a,{description:'Cena',amountMinor:1000,currency:'USDT',payerId:ana.id,participantIds:[ana.id]}), /cerrada/i);
 });
 
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.id} - ${r.name}${r.ok ? '' : `\n${r.error}`}`);

@@ -11,6 +11,9 @@ const els = Object.fromEntries([
 ].map((id) => [id, $(id)]));
 
 function selectedActivity() { return state.activities.find((a) => a.id === state.selectedActivityId) ?? null; }
+function isClosed(activity) { return activity?.status === 'Cerrada'; }
+function hasConfirmedReconciliations(activity) { return (activity?.payments?.length ?? 0) > 0; }
+function canEditExpenses(activity) { return Boolean(activity) && !isClosed(activity) && !hasConfirmedReconciliations(activity); }
 function persist() { saveState(state); render(); }
 
 els['activity-form'].addEventListener('submit', (event) => {
@@ -60,9 +63,11 @@ document.addEventListener('click', (event) => {
   const action = button.dataset.action;
   const id = button.dataset.id;
   if (action === 'remove-participant') {
+    if (isClosed(activity)) return showMessage('La actividad está cerrada y es de solo lectura.', true);
     if (confirm('¿Eliminar participante?')) run(() => { removeParticipant(activity, id); persist(); }, 'Participante eliminado.');
   }
   if (action === 'edit-expense') {
+    if (!canEditExpenses(activity)) return showMessage('Los gastos ya no pueden modificarse después de confirmar conciliaciones o cerrar la actividad.', true);
     const expense = activity.expenses.find((item) => item.id === id);
     if (!expense) return;
     els['expense-id'].value = expense.id;
@@ -75,6 +80,7 @@ document.addEventListener('click', (event) => {
     els['expense-cancel'].classList.remove('hidden');
   }
   if (action === 'delete-expense') {
+    if (!canEditExpenses(activity)) return showMessage('Los gastos ya no pueden modificarse después de confirmar conciliaciones o cerrar la actividad.', true);
     if (confirm('¿Eliminar gasto?')) run(() => { deleteExpense(activity, id); persist(); }, 'Gasto eliminado.');
   }
   if (action === 'confirm-transfer') {
@@ -112,7 +118,8 @@ function render() {
 function renderParticipantControls() {
   const activity = selectedActivity();
   const participants = activity?.participants ?? [];
-  els['participant-list'].innerHTML = participants.length ? participants.map((p) => `<li class="list-item"><span>${escapeHtml(p.name)}${activity.managerId === p.id ? ' · <strong>Encargado</strong>' : ''}</span><button type="button" class="button button-secondary button-small" data-action="remove-participant" data-id="${p.id}">Eliminar</button></li>`).join('') : '<li class="empty-state">Aún no hay participantes.</li>';
+  const participantActions = activity && !isClosed(activity);
+  els['participant-list'].innerHTML = participants.length ? participants.map((p) => `<li class="list-item"><span>${escapeHtml(p.name)}${activity.managerId === p.id ? ' · <strong>Encargado</strong>' : ''}</span>${participantActions ? `<button type="button" class="button button-secondary button-small" data-action="remove-participant" data-id="${p.id}">Eliminar</button>` : ''}</li>`).join('') : '<li class="empty-state">Aún no hay participantes.</li>';
   const options = `<option value="">Selecciona un participante</option>${participants.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}`;
   els['manager-select'].innerHTML = options; if (activity?.managerId) els['manager-select'].value = activity.managerId;
   els['payer-select'].innerHTML = `<option value="">Selecciona pagador</option>${participants.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}`;
@@ -122,7 +129,8 @@ function renderParticipantControls() {
 function renderExpenses() {
   const activity = selectedActivity();
   if (!activity || activity.expenses.length === 0) { els['expense-list'].innerHTML = '<div class="empty-state">Aún no hay gastos registrados.</div>'; return; }
-  els['expense-list'].innerHTML = activity.expenses.map((expense) => `<article class="expense-card"><div class="expense-header"><div><strong>${escapeHtml(expense.description)}</strong><div class="helper">Pagó ${escapeHtml(nameFor(activity, expense.payerId))} · ${expense.currency} ${(expense.amountMinor / 100).toFixed(2)}</div></div><div class="actions"><button class="button button-secondary button-small" data-action="edit-expense" data-id="${expense.id}">Editar</button><button class="button button-secondary button-small" data-action="delete-expense" data-id="${expense.id}">Eliminar</button></div></div><div class="helper">Se divide entre: ${expense.participantIds.map((id) => escapeHtml(nameFor(activity, id))).join(', ')}</div></article>`).join('');
+  const expenseActions = canEditExpenses(activity);
+  els['expense-list'].innerHTML = activity.expenses.map((expense) => `<article class="expense-card"><div class="expense-header"><div><strong>${escapeHtml(expense.description)}</strong><div class="helper">Pagó ${escapeHtml(nameFor(activity, expense.payerId))} · ${expense.currency} ${(expense.amountMinor / 100).toFixed(2)}</div></div>${expenseActions ? `<div class="actions"><button class="button button-secondary button-small" data-action="edit-expense" data-id="${expense.id}">Editar</button><button class="button button-secondary button-small" data-action="delete-expense" data-id="${expense.id}">Eliminar</button></div>` : ''}</div><div class="helper">Se divide entre: ${expense.participantIds.map((id) => escapeHtml(nameFor(activity, id))).join(', ')}</div></article>`).join('');
 }
 
 function renderBalances() {

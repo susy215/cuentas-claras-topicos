@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { splitEqualCents, computeBalances, normalizeToUsdtCents, settlementWithPayments, validateBobPerUsdt } from '../js/calculations.js';
+import { splitEqualCents, computeBalances, normalizeToUsdtCents, settlementWithPayments, summarizeExpenses, validateBobPerUsdt } from '../js/calculations.js';
 import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, removeParticipant, setManager, updateRate } from '../js/domain.js';
 import { deserializeState, serializeState } from '../js/storage.js';
 
@@ -111,6 +111,26 @@ await test('P11', 'actividad cerrada rechaza modificaciones del dominio', () => 
   assert.throws(() => removeParticipant(a, ana.id), /cerrada/i);
   assert.throws(() => updateRate(a, 7), /cerrada/i);
   assert.throws(() => addExpense(a,{description:'Cena',amountMinor:1000,currency:'USDT',payerId:ana.id,participantIds:[ana.id]}), /cerrada/i);
+});
+
+
+await test('P12', 'resumen visible reutiliza normalización BOB: 69 BOB a 6,90 = 10 USDT', () => {
+  const a = createActivity('P12', 6.9);
+  const ana = addParticipant(a, 'Ana');
+  addExpense(a,{description:'Cena',amountMinor:6900,currency:'BOB',payerId:ana.id,participantIds:[ana.id]});
+  const summary = summarizeExpenses(a);
+  assert.equal(summary.items[0].normalizedCents, 1000);
+  assert.equal(summary.totalNormalizedCents, 1000);
+});
+
+await test('P13', 'resumen de monedas mixtas: 100 BOB + 100 USDT a tasa 100 = 101 USDT', () => {
+  const a = createActivity('P13', 100);
+  const ana = addParticipant(a, 'Ana');
+  addExpense(a,{description:'Cena',amountMinor:10000,currency:'BOB',payerId:ana.id,participantIds:[ana.id]});
+  addExpense(a,{description:'Viaje',amountMinor:10000,currency:'USDT',payerId:ana.id,participantIds:[ana.id]});
+  const summary = summarizeExpenses(a);
+  assert.deepEqual(summary.items.map((item) => item.normalizedCents), [100, 10000]);
+  assert.equal(summary.totalNormalizedCents, 10100);
 });
 
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.id} - ${r.name}${r.ok ? '' : `\n${r.error}`}`);

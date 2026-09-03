@@ -14,10 +14,10 @@ export function parseMoneyToMinor(value) {
 
 export function validateBobPerUsdt(value) {
   const text = String(value ?? '').trim().replace(',', '.');
-  if (text === '') throw new Error('La tasa BOB/USDT es obligatoria.');
+  if (text === '') throw new Error('El tipo de cambio BOB/USDT es obligatorio.');
   const rate = Number(text);
   if (!Number.isFinite(rate) || rate <= 0) {
-    throw new Error('La tasa BOB/USDT debe ser numérica y mayor que cero.');
+    throw new Error('El tipo de cambio BOB/USDT debe ser numérico y mayor que cero.');
   }
   return rate;
 }
@@ -69,6 +69,25 @@ export function computeBalances(activity) {
   const sum = [...balances.values()].reduce((acc, value) => acc + value, 0);
   if (sum !== 0) throw new Error(`Inconsistencia matemática: la suma de balances es ${sum}, no cero.`);
   return balances;
+}
+
+export function summarizeExpenses(activity) {
+  const items = activity.expenses.map((expense) => {
+    const { normalizedCents } = computeExpenseShares(expense, activity.bobPerUsdt);
+    return {
+      expenseId: expense.id,
+      description: expense.description,
+      amountMinor: expense.amountMinor,
+      currency: expense.currency,
+      normalizedCents,
+    };
+  });
+  const totalNormalizedCents = items.reduce((sum, item) => sum + item.normalizedCents, 0);
+  return {
+    bobPerUsdt: activity.bobPerUsdt,
+    items,
+    totalNormalizedCents,
+  };
 }
 
 export function buildSettlement(activity) {

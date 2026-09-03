@@ -1,13 +1,13 @@
-import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments } from './calculations.js';
-import { createEmptyState, loadState, saveState } from './storage.js';
-import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js';
+import { computeBalances, formatMoney, parseMoneyToMinor, settlementWithPayments, summarizeExpenses } from './calculations.js?v=inc2b';
+import { createEmptyState, loadState, saveState } from './storage.js?v=inc2b';
+import { addExpense, addParticipant, closeActivity, confirmTransfer, createActivity, deleteExpense, editExpense, getSettlement, removeParticipant, setManager, updateRate } from './domain.js?v=inc2b';
 
 let state;
 try { state = loadState(); } catch (error) { state = createEmptyState(); queueMicrotask(() => showMessage(error.message, true)); }
 
 const $ = (id) => document.getElementById(id);
 const els = Object.fromEntries([
-  'activity-form','activity-name','activity-rate','activity-summary','activity-status','participant-form','participant-name','participant-list','manager-select','rate-update','rate-button','expense-form','expense-id','expense-description','expense-amount','expense-currency','payer-select','expense-participants','expense-submit','expense-cancel','expense-list','balance-list','balance-integrity','settlement-list','close-button','close-message','message'
+  'activity-form','activity-name','activity-rate','activity-summary','activity-status','participant-form','participant-name','participant-list','manager-select','rate-update','rate-button','expense-form','expense-id','expense-description','expense-amount','expense-currency','payer-select','expense-participants','expense-submit','expense-cancel','expense-list','expense-summary','balance-list','balance-integrity','settlement-list','close-button','close-message','message'
 ].map((id) => [id, $(id)]));
 
 function selectedActivity() { return state.activities.find((a) => a.id === state.selectedActivityId) ?? null; }
@@ -33,7 +33,7 @@ els['participant-form'].addEventListener('submit', (event) => {
 });
 
 els['manager-select'].addEventListener('change', () => run(() => { setManager(requireActivity(), els['manager-select'].value); persist(); }, 'Encargado actualizado.'));
-els['rate-button'].addEventListener('click', () => run(() => { updateRate(requireActivity(), els['rate-update'].value); persist(); }, 'Tasa actualizada.'));
+els['rate-button'].addEventListener('click', () => run(() => { updateRate(requireActivity(), els['rate-update'].value); persist(); }, 'Tipo de cambio actualizado.'));
 
 els['expense-form'].addEventListener('submit', (event) => {
   event.preventDefault();
@@ -105,12 +105,12 @@ function render() {
   if (!activity) {
     els['activity-summary'].textContent = 'Crea una actividad para comenzar.';
     els['activity-status'].textContent = 'Sin actividad'; els['activity-status'].className = 'badge badge-neutral';
-    renderParticipantControls(); renderExpenses(); renderBalances(); renderSettlement(); return;
+    renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement(); return;
   }
-  els['activity-summary'].innerHTML = `<strong>${escapeHtml(activity.name)}</strong><br>Tasa: 1 USDT = ${activity.bobPerUsdt} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)`;
+  els['activity-summary'].innerHTML = `<strong>${escapeHtml(activity.name)}</strong><br>Tipo de cambio: 1 USDT = ${formatRate(activity.bobPerUsdt)} BOB · ${activity.participants.length} participante(s) · ${activity.expenses.length} gasto(s)`;
   els['activity-status'].textContent = activity.status; els['activity-status'].className = `badge ${activity.status === 'Cerrada' ? 'badge-success' : 'badge-warning'}`;
   els['rate-update'].value = activity.bobPerUsdt;
-  renderParticipantControls(); renderExpenses(); renderBalances(); renderSettlement();
+  renderParticipantControls(); renderExpenses(); renderExpenseSummary(); renderBalances(); renderSettlement();
   els['close-button'].disabled = activity.status === 'Cerrada';
   els['close-message'].textContent = activity.status === 'Cerrada' ? 'La actividad está cerrada y su estado quedó persistido.' : 'Confirma todas las conciliaciones antes de cerrar.';
 }
@@ -130,7 +130,31 @@ function renderExpenses() {
   const activity = selectedActivity();
   if (!activity || activity.expenses.length === 0) { els['expense-list'].innerHTML = '<div class="empty-state">Aún no hay gastos registrados.</div>'; return; }
   const expenseActions = canEditExpenses(activity);
-  els['expense-list'].innerHTML = activity.expenses.map((expense) => `<article class="expense-card"><div class="expense-header"><div><strong>${escapeHtml(expense.description)}</strong><div class="helper">Pagó ${escapeHtml(nameFor(activity, expense.payerId))} · ${expense.currency} ${(expense.amountMinor / 100).toFixed(2)}</div></div>${expenseActions ? `<div class="actions"><button class="button button-secondary button-small" data-action="edit-expense" data-id="${expense.id}">Editar</button><button class="button button-secondary button-small" data-action="delete-expense" data-id="${expense.id}">Eliminar</button></div>` : ''}</div><div class="helper">Se divide entre: ${expense.participantIds.map((id) => escapeHtml(nameFor(activity, id))).join(', ')}</div></article>`).join('');
+  const summaryById = new Map(summarizeExpenses(activity).items.map((item) => [item.expenseId, item]));
+  els['expense-list'].innerHTML = activity.expenses.map((expense) => {
+    const summary = summaryById.get(expense.id);
+    return `<article class="expense-card"><div class="expense-header"><div><strong>${escapeHtml(expense.description)}</strong><div class="helper">Pagó ${escapeHtml(nameFor(activity, expense.payerId))} · ${formatOriginalMoney(expense.amountMinor, expense.currency)} → <strong>${formatMoney(summary.normalizedCents)}</strong></div></div>${expenseActions ? `<div class="actions"><button class="button button-secondary button-small" data-action="edit-expense" data-id="${expense.id}">Editar</button><button class="button button-secondary button-small" data-action="delete-expense" data-id="${expense.id}">Eliminar</button></div>` : ''}</div><div class="helper">Se divide entre: ${expense.participantIds.map((id) => escapeHtml(nameFor(activity, id))).join(', ')}</div></article>`;
+  }).join('');
+}
+
+function renderExpenseSummary() {
+  const activity = selectedActivity();
+  if (!activity || activity.expenses.length === 0) {
+    els['expense-summary'].innerHTML = '<div class="empty-state">El resumen multimoneda aparecerá cuando registres gastos.</div>';
+    return;
+  }
+  try {
+    const summary = summarizeExpenses(activity);
+    els['expense-summary'].innerHTML = `
+      <div class="summary-heading">
+        <div><strong>Resumen multimoneda</strong><div class="helper">Tipo de cambio utilizado: 1 USDT = ${formatRate(summary.bobPerUsdt)} BOB</div></div>
+        <span class="badge badge-info">USDT</span>
+      </div>
+      <div class="summary-list">${summary.items.map((item) => `<div class="summary-row"><span>${escapeHtml(item.description)}</span><span>${formatOriginalMoney(item.amountMinor, item.currency)} → <strong>${formatMoney(item.normalizedCents)}</strong></span></div>`).join('')}</div>
+      <div class="summary-total"><span>Total normalizado</span><strong>${formatMoney(summary.totalNormalizedCents)}</strong></div>`;
+  } catch (error) {
+    els['expense-summary'].innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
 }
 
 function renderBalances() {
@@ -152,5 +176,7 @@ function renderSettlement() {
     els['settlement-list'].innerHTML = transfers.map((t) => `<article class="transfer-card"><div class="transfer-row"><div><strong>${escapeHtml(nameFor(activity,t.fromId))} → ${escapeHtml(nameFor(activity,t.toId))}</strong><div>${formatMoney(t.requiredCents)} · Pendiente: ${formatMoney(t.pendingCents)}</div></div><span class="badge ${t.status === 'Pagado' ? 'badge-success' : 'badge-warning'}">${t.status}</span></div>${t.pendingCents > 0 ? `<button class="button button-primary compact-top" data-action="confirm-transfer" data-id="${t.key}">Confirmar conciliación completa</button>` : ''}</article>`).join('');
   } catch (error) { els['settlement-list'].innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`; }
 }
+function formatOriginalMoney(cents, currency) { return `${currency} ${(cents / 100).toFixed(2)}`; }
+function formatRate(value) { return Number(value).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 6 }); }
 function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
 render();

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cuentas Claras</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=inc2b">
 </head>
 <body>
   <header class="app-header">
@@ -26,10 +26,10 @@
       </div>
       <form id="activity-form" class="form-grid">
         <label>Nombre de la actividad
-          <input id="activity-name" required placeholder="Viaje a Samaipata">
+          <input id="activity-name" required placeholder="Ej.: Viaje a Samaipata">
         </label>
-        <label>Tasa BOB/USDT
-          <input id="activity-rate" inputmode="decimal" required placeholder="6.90">
+        <label>Tipo de cambio BOB/USDT
+          <input id="activity-rate" inputmode="decimal" required placeholder="Ej.: 6,90">
           <small>Regla: 1 USDT = X BOB.</small>
         </label>
         <button class="button button-primary" type="submit">Crear actividad</button>
@@ -41,7 +41,7 @@
       <div class="section-heading"><div><p class="step">Paso 2</p><h2 id="participants-title">Participantes y encargado</h2></div></div>
       <form id="participant-form" class="inline-form">
         <label class="grow">Nombre
-          <input id="participant-name" required placeholder="Ana Pérez">
+          <input id="participant-name" required placeholder="Ej.: Ana Pérez">
         </label>
         <button class="button button-primary" type="submit">Agregar</button>
       </form>
@@ -49,8 +49,8 @@
         <label>Encargado
           <select id="manager-select"><option value="">Selecciona un participante</option></select>
         </label>
-        <label>Actualizar tasa BOB/USDT
-          <div class="inline-form"><input id="rate-update" inputmode="decimal"><button id="rate-button" type="button" class="button button-secondary">Guardar tasa</button></div>
+        <label>Actualizar tipo de cambio BOB/USDT
+          <div class="inline-form"><input id="rate-update" inputmode="decimal"><button id="rate-button" type="button" class="button button-secondary">Guardar tipo de cambio</button></div>
         </label>
       </div>
       <ul id="participant-list" class="list"></ul>
@@ -60,14 +60,15 @@
       <div class="section-heading"><div><p class="step">Paso 3</p><h2 id="expenses-title">Registrar gasto</h2></div></div>
       <form id="expense-form" class="form-grid">
         <input id="expense-id" type="hidden">
-        <label>Descripción<input id="expense-description" required placeholder="Cena"></label>
-        <label>Monto<input id="expense-amount" inputmode="decimal" required placeholder="100.00"></label>
+        <label>Descripción<input id="expense-description" required placeholder="Ej.: Cena"></label>
+        <label>Monto<input id="expense-amount" inputmode="decimal" required placeholder="Ej.: 100,00"></label>
         <label>Moneda<select id="expense-currency"><option>BOB</option><option>USD</option><option>USDT</option></select></label>
         <label>Pagador<select id="payer-select"></select></label>
         <fieldset class="span-full"><legend>¿Entre quiénes se divide?</legend><div id="expense-participants" class="checkbox-grid"></div></fieldset>
         <div class="actions span-full"><button class="button button-primary" type="submit" id="expense-submit">Registrar gasto</button><button class="button button-secondary hidden" type="button" id="expense-cancel">Cancelar edición</button></div>
       </form>
       <div id="expense-list" class="stack"></div>
+      <div id="expense-summary" class="expense-summary" aria-live="polite"></div>
     </section>
 
     <section class="card" aria-labelledby="balances-title">
@@ -91,6 +92,6 @@
     <div id="message" class="toast hidden" role="status" aria-live="polite"></div>
   </main>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=inc2b"></script>
 </body>
 </html>

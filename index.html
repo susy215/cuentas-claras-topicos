@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuentas Claras</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="container">
+      <p class="eyebrow">ELC-103 · Spec-Driven Development</p>
+      <h1>Cuentas Claras</h1>
+      <p class="subtitle">Gastos compartidos, balances y conciliación en USDT.</p>
+    </div>
+  </header>
+
+  <main class="container stack-lg">
+    <section class="card" aria-labelledby="activity-title">
+      <div class="section-heading">
+        <div>
+          <p class="step">Paso 1</p>
+          <h2 id="activity-title">Actividad</h2>
+        </div>
+        <span id="activity-status" class="badge badge-neutral">Sin actividad</span>
+      </div>
+      <form id="activity-form" class="form-grid">
+        <label>Nombre de la actividad
+          <input id="activity-name" required placeholder="Viaje a Samaipata">
+        </label>
+        <label>Tasa BOB/USDT
+          <input id="activity-rate" inputmode="decimal" required placeholder="6.90">
+          <small>Regla: 1 USDT = X BOB.</small>
+        </label>
+        <button class="button button-primary" type="submit">Crear actividad</button>
+      </form>
+      <div id="activity-summary" class="empty-state">Crea una actividad para comenzar.</div>
+    </section>
+
+    <section class="card" aria-labelledby="participants-title">
+      <div class="section-heading"><div><p class="step">Paso 2</p><h2 id="participants-title">Participantes y encargado</h2></div></div>
+      <form id="participant-form" class="inline-form">
+        <label class="grow">Nombre
+          <input id="participant-name" required placeholder="Ana Pérez">
+        </label>
+        <button class="button button-primary" type="submit">Agregar</button>
+      </form>
+      <div class="form-grid compact-top">
+        <label>Encargado
+          <select id="manager-select"><option value="">Selecciona un participante</option></select>
+        </label>
+        <label>Actualizar tasa BOB/USDT
+          <div class="inline-form"><input id="rate-update" inputmode="decimal"><button id="rate-button" type="button" class="button button-secondary">Guardar tasa</button></div>
+        </label>
+      </div>
+      <ul id="participant-list" class="list"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="expenses-title">
+      <div class="section-heading"><div><p class="step">Paso 3</p><h2 id="expenses-title">Registrar gasto</h2></div></div>
+      <form id="expense-form" class="form-grid">
+        <input id="expense-id" type="hidden">
+        <label>Descripción<input id="expense-description" required placeholder="Cena"></label>
+        <label>Monto<input id="expense-amount" inputmode="decimal" required placeholder="100.00"></label>
+        <label>Moneda<select id="expense-currency"><option>BOB</option><option>USD</option><option>USDT</option></select></label>
+        <label>Pagador<select id="payer-select"></select></label>
+        <fieldset class="span-full"><legend>¿Entre quiénes se divide?</legend><div id="expense-participants" class="checkbox-grid"></div></fieldset>
+        <div class="actions span-full"><button class="button button-primary" type="submit" id="expense-submit">Registrar gasto</button><button class="button button-secondary hidden" type="button" id="expense-cancel">Cancelar edición</button></div>
+      </form>
+      <div id="expense-list" class="stack"></div>
+    </section>
+
+    <section class="card" aria-labelledby="balances-title">
+      <div class="section-heading"><div><p class="step">Paso 4</p><h2 id="balances-title">Balances normalizados</h2></div><span class="badge badge-info">USDT</span></div>
+      <div id="balance-list" class="grid-cards"></div>
+      <p id="balance-integrity" class="integrity"></p>
+    </section>
+
+    <section class="card" aria-labelledby="settlement-title">
+      <div class="section-heading"><div><p class="step">Paso 5</p><h2 id="settlement-title">Liquidación y conciliación</h2></div></div>
+      <p class="helper">Una propuesta no se considera pagada hasta que el encargado la confirma.</p>
+      <div id="settlement-list" class="stack"></div>
+    </section>
+
+    <section class="card" aria-labelledby="close-title">
+      <div class="section-heading"><div><p class="step">Paso 6</p><h2 id="close-title">Cierre efectivo</h2></div></div>
+      <p id="close-message" class="helper">La actividad solo puede cerrarse cuando no queden conciliaciones pendientes.</p>
+      <button id="close-button" class="button button-danger" type="button">Cerrar actividad</button>
+    </section>
+
+    <div id="message" class="toast hidden" role="status" aria-live="polite"></div>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -50,8 +50,14 @@ Si existe una contradicción, detenerse y solicitar una decisión. No resolverla
 - No borrar ni reemplazar trabajo aprobado sin autorización.
 - No incorporar librerías, frameworks, servicios o tecnologías no aprobadas.
 
-## Trabajo en equipo
+## Cambios aprobados para la entrega del 3 de septiembre de 2026
 
-- La conformación definitiva del equipo está pendiente de la decisión docente.
-- Si Yandira se integra a otro grupo, comparar primero los artefactos y herramientas de ambas propuestas.
-- No reemplazar el trabajo del nuevo grupo ni estos artefactos sin una revisión y decisión explícita.
+- Conservar intactas las 16 tareas históricas de `openspec/changes/crear-version-inicial-cuentas-claras/tasks.md`.
+- Mantener dos cambios delta separados: `agregar-multimoneda` y `definir-sistema-diseno`.
+- Implementar primero el flujo end-to-end defendible: actividad, participantes, gasto, división, conversión, balances, liquidación, conciliación confirmada y cierre efectivo.
+- Para ese flujo se permite únicamente el soporte mínimo necesario de RF-11 a RF-15; no se declara implementado su alcance completo sin ejecutar todos sus criterios históricos.
+- Multimoneda admite BOB, USD y USDT; la liquidación se expresa en USDT.
+- Cada actividad usa una única tasa manual `1 USDT = X BOB`, numérica y mayor que cero.
+- Para esta versión, `1 USD = 1 USDT` es una simplificación interna aprobada.
+- En divisiones no exactas, las unidades mínimas residuales se asignan al último participante según un orden estable.
+- No usar base de datos, frameworks, pagos bancarios reales, QR, facturas con IA, WhatsApp, notificaciones ni otros extras no aprobados.
